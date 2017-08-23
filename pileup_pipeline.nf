@@ -66,7 +66,7 @@ process annotate{
     file ("${SNP_vcf.baseName}.vep.filt.xls") into annotated_filtered_SNP_xls
 
     """
-    ${VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf --force_overwrite --sift b --polyphen b  --vcf --offline --per_gene --no_intergenic --cache ${vep_cache}
+    ${VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf --force_overwrite --hgvs --fasta ${params.ref}  --sift b --polyphen b  --vcf --offline --per_gene --no_intergenic --cache ${vep_cache}
     grep -E "MODERATE|HIGH|#" ${SNP_vcf.baseName}.vep.vcf > ${SNP_vcf.baseName}.vep.filt.vcf
 
     if [ "" != ${params.genelist} ]
