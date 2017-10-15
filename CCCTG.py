@@ -41,7 +41,7 @@ def compute_rankscore(variant_dictionary):
     #add points for compound and homozygous variants
     if variant_dictionary["zygosity"] == "hom":
         rank_score += 2
-    elif not variant_dictionary["zygosity"] = "het":
+    elif not variant_dictionary["zygosity"] == "het":
         rank_score += 1
 
     #increase the score of known pathogenic or likely pathogenic variants, decrease the score of benign variants
@@ -151,7 +151,7 @@ for line in open(args.vcf):
 
                 sift=snp_dictionary[gene][variant][-3]
 
-                if float(popfreq) > args.frequency or float(sweaf) > args.frequency or float(exac) > args.frequency or float(gnomad) > args.frequencys:
+                if float(popfreq) > args.frequency or float(sweaf) > args.frequency or float(exac) > args.frequency or float(gnomad) > args.frequency:
                      continue
                 rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clinvar,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"sweaf":sweaf,"exac":exac,"gnomad":gnomad,"black_listed":blacklist,"high":high})
                 variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,variant,gene,zygosity,clinvar,rankscore,blacklist,poly,sift,cadd,popfreq,sweaf,exac,gnomad])
