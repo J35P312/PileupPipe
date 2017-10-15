@@ -18,7 +18,7 @@ def main(args):
             else:
                 CADD=False
                 annotation=";CADD={}"
-                content=line.split("\t")
+                content=line.strip().split("\t")
 
                 chromosome=content[0]
                 position=int(content[1])

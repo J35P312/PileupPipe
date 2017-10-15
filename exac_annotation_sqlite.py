@@ -47,7 +47,7 @@ def main(args):
         else:
             FRQ=0
             annotation=";{}={}"
-            content=line.split("\t")
+            content=line.strip().split("\t")
 
             chromosome=content[0]
             position=content[1]
@@ -60,8 +60,8 @@ def main(args):
             hits=[]
             for hit in c.execute(A):
                 FRQ = hit[0]
-            if float(FRQ) > 0.01:
-                continue
+            #if float(FRQ) > 0.01:
+            #    continue
             
             
 
