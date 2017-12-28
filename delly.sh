@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -A b2014152
 #SBATCH -p core
-#SBATCH -n 2
+#SBATCH -n 4
 #SBATCH -t 96:00:00
 #SBATCH -J pileup
 
@@ -57,5 +57,5 @@ samtools faidx $TMPDIR/human_g1k_v37.fasta
 
 java -jar $picard CreateSequenceDictionary REFERENCE=$TMPDIR/human_g1k_v37.fasta
 
-./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --kg $kg --exac $exac  --swefreq $swefreq --working_dir $TMPDIR/$sample --ref $TMPDIR/human_g1k_v37.fasta --clinvar $clinvar  --dbSNP $dbsnp  --cadd_indels $cadd_indels --cadd_snps $cadd_snps --genelist $3 -w $TMPDIR --gatk $gatk --gnomad $gnomad
+./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --kg $kg --exac $exac  --swefreq $swefreq --working_dir $TMPDIR/$sample --ref $TMPDIR/human_g1k_v37.fasta --clinvar $clinvar  --dbSNP $dbSNP  --cadd_indels $cadd_indels --cadd_snps $cadd_snps --genelist $3 -w $TMPDIR --gatk $gatk --gnomad $gnomad
 cp -rf $TMPDIR/$sample/ $2/

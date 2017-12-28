@@ -25,7 +25,13 @@ def main(args):
                 end=position+1
                 alt=content[4]
                 #cadd annotation
-                if args.cadd:
+				intergenic = False
+				if "intergenic_" in line:
+					intergenic=True
+				if "|HIGH|" line or "|MODERATE" in line or "|LOW" in line:
+					intergenic=False
+
+                if args.cadd and not intergenic:
                     command=["tabix {} {}:{}-{}".format(args.cadd,chromosome,position,end)]
                     tmp=subprocess.check_output(command, shell = True);
                     output=tmp.split("\n")

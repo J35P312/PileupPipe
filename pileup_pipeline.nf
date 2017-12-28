@@ -21,7 +21,7 @@ VEP_exec_file="variant_effect_predictor.pl"
 tiddit="/proj/b2016296/private/nobackup/annotation/TIDDIT/bin/TIDDIT"
 
 //This variable needs to be set to the path of the pipeline folder
-pileup_pipeline_home="/proj/b2014152/nobackup/private/pileup_pipeline"
+pileup_pipeline_home="/home/jesperei/PileupPipe"
 
 frequency_script="${pileup_pipeline_home}/exac_annotation_sqlite.py"
 print_variants="${pileup_pipeline_home}/print_variant.py"
@@ -63,9 +63,12 @@ if (params.bam != ""){
         file sex_tab
 
         output:
-        file ("${bam_file.baseName}.snps.samtools.raw.vcf") into RAW_SNP_pileup_vcf
+        file ("${bam_file.baseName}.snps.samtools.vcf") into RAW_SNP_pileup_vcf
         """
         samtools mpileup -uf ${params.ref} ${params.bam} | bcftools call -cv --ploidy-file ${sex_tab} > ${bam_file.baseName}.snps.samtools.raw.vcf
+
+        vt decompose ${bam_file.baseName}.snps.samtools.raw.vcf -o ${bam_file.baseName}.snps.samtools.decomposed.vcf 
+        vt normalize ${bam_file.baseName}.snps.samtools.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.snps.samtools.vcf
         """
     }
 
@@ -73,14 +76,36 @@ if (params.bam != ""){
         publishDir params.working_dir , mode: 'copy', overwrite: true
 
         input:
-	file bam_file
+		file bam_file
 
         output:
-        file ("${bam_file.baseName}.snps.freebayes.raw.vcf") into RAW_SNP_freebayes_vcf
+        file ("${bam_file.baseName}.snps.freebayes.vcf") into RAW_SNP_freebayes_vcf
         """
         freebayes -f ${params.ref} ${params.bam} | grep -v "	0/0:" > ${bam_file.baseName}.snps.freebayes.raw.vcf
+
+        vt decompose  ${bam_file.baseName}.snps.freebayes.raw.vcf -o ${bam_file.baseName}.snps.freebayes.decomposed.vcf
+        vt normalize ${bam_file.baseName}.snps.freebayes.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.snps.freebayes.vcf
         """
     }
+
+    process GATK{
+        publishDir params.working_dir , mode: 'copy', overwrite: true
+
+        input:
+        file bam_file
+
+        output:
+        file ("${bam_file.baseName}.snps.GATK.vcf") into RAW_SNP_GATK_vcf
+        """
+        
+        java -Xmx8G -jar ${params.gatk} -T HaplotypeCaller -R ${params.ref} -I ${params.bam} --genotyping_mode DISCOVERY -stand_call_conf 10 -o ${bam_file.baseName}.snps.GATK.raw.vcf  -mmq 10
+
+        vt decompose ${bam_file.baseName}.snps.GATK.raw.vcf -o ${bam_file.baseName}.snps.GATK.decomposed.vcf
+        vt normalize ${bam_file.baseName}.snps.GATK.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.snps.GATK.vcf
+        """
+    }
+
+
 
 
     process vt_and_merge{
@@ -89,8 +114,9 @@ if (params.bam != ""){
         maxRetries 20
 
         input:
-	file RAW_SNP_pileup_vcf
+		file RAW_SNP_pileup_vcf
         file RAW_SNP_freebayes_vcf
+        file RAW_SNP_GATK_vcf
         file bam_file
 
         output:
@@ -98,13 +124,10 @@ if (params.bam != ""){
 
 
         """
-        vt decompose ${RAW_SNP_pileup_vcf.baseName}.vcf -o ${RAW_SNP_pileup_vcf.baseName}.decomposed.vcf
-        vt normalize ${RAW_SNP_pileup_vcf.baseName}.decomposed.vcf -r ${params.ref} -o ${RAW_SNP_pileup_vcf.baseName}.vcf
+        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:GATK ${RAW_SNP_GATK_vcf} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.merged.vcf -genotypeMergeOptions PRIORITIZE -priority freebayes,samtools,GATK
 
-        vt decompose ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${RAW_SNP_freebayes_vcf.baseName}.decomposed.vcf
-        vt normalize ${RAW_SNP_freebayes_vcf.baseName}.decomposed.vcf -r ${params.ref} -o ${RAW_SNP_freebayes_vcf.baseName}.vcf
-
-        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.vcf -genotypeMergeOptions PRIORITIZE -priority samtools,freebayes
+        vt decompose ${bam_file.baseName}.merged.vcf -o ${bam_file.baseName}.merged.decomposed.vcf
+        vt normalize ${bam_file.baseName}.merged.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.vcf
 
         if [ "" != ${params.dbSNP} ]
         then
@@ -132,10 +155,8 @@ if (params.bam != ""){
 
 
         """
-        cp ${params.ref} $TMPDIR/ref.fa
-        samtools faidx $TMPDIR/ref.fa
 
-        vt decompose ${RAW_SNP_vcf.baseName}.vcf -o ${RAW_SNP_vcf.baseName}.decomposed.vcf
+        vt decompose ${RAW_SNP_vcf} -o ${RAW_SNP_vcf.baseName}.decomposed.vcf
         vt normalize ${RAW_SNP_vcf.baseName}.decomposed.vcf -r $TMPDIR/ref.fa -o ${RAW_SNP_vcf.baseName}.vcf
         if [ "" != ${params.dbSNP} ]
         then
@@ -157,13 +178,12 @@ process annotate{
     file SNP_vcf
     
     output:
-    file ("${SNP_vcf.baseName}.vep.vcf") into annotated_SNP_vcf
     file ("${SNP_vcf.baseName}.vep.filt.vcf") into annotated_filtered_SNP_vcf
     file ("${SNP_vcf.baseName}.vep.filt.xls") into annotated_filtered_SNP_xls
 
     """
-    ${VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf --force_overwrite --hgvs --symbol --fasta ${params.ref}  --sift b --polyphen b  --vcf --offline --per_gene --no_intergenic --cache --dir ${vep_cache}
-    grep -E "MODERATE|HIGH|#" ${SNP_vcf.baseName}.vep.vcf > ${SNP_vcf.baseName}.vep.filt.vcf
+    ${VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf --force_overwrite --hgvs --symbol --fasta ${params.ref}  --sift b --polyphen b  --vcf --offline --per_gene --no_intergenic --cache --dir ${vep_cache} --symbol --check_existing
+    mv ${SNP_vcf.baseName}.vep.vcf ${SNP_vcf.baseName}.vep.filt.vcf
 
     if [ "" != ${params.genelist} ]
     then
@@ -214,4 +234,3 @@ process annotate{
     python ${excel_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --frequency 0.025
     """
 }
-

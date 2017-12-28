@@ -7,5 +7,5 @@ do
     filename=$(basename "$file")
     extension="${filename##*.}"
     filename="${filename%.*}"
-    sbatch delly2.sh $1 $2 
+    sbatch delly2.sh $file $2 
 done
