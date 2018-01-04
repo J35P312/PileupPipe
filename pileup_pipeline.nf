@@ -1,35 +1,13 @@
-params.bam=""
-params.vcf=""
-
-params.ref=""
-params.working_dir=""
-params.exac='""'
-params.kg='""'
-params.swefreq='""'
-params.genelist='""'
-params.cadd_indels='""'
-params.cadd_snps='""'
-params.dbSNP='""'
-params.clinvar='""'
-params.gnomad='""'
-params.gatk='""'
-
-
 //path of the vep executable file
-VEP_exec_file="variant_effect_predictor.pl"
-//path of the tiddit executable file
-tiddit="/proj/b2016296/private/nobackup/annotation/TIDDIT/bin/TIDDIT"
 
-//This variable needs to be set to the path of the pipeline folder
-pileup_pipeline_home="/home/jesperei/PileupPipe"
-
-frequency_script="${pileup_pipeline_home}/exac_annotation_sqlite.py"
-print_variants="${pileup_pipeline_home}/print_variant.py"
-excel_script="${pileup_pipeline_home}/CCCTG.py"
-CADD_script="${pileup_pipeline_home}/annotate_vcf_cadd.py"
+tiddit="${pileup_pipeline_home}/TIDDIT/bin/TIDDIT"
+frequency_script="${pileup_pipeline_home}/internal_scripts/exac_annotation_sqlite.py"
+print_variants="${pileup_pipeline_home}/internal_scripts/print_variant.py"
+excel_script="${pileup_pipeline_home}/internal_scripts/CCCTG.py"
+CADD_script="${pileup_pipeline_home}/internal_scripts/annotate_vcf_cadd.py"
 vep_cache="${pileup_pipeline_home}/.vep"
-clinvar_script="${pileup_pipeline_home}/ClinVar_annotate.py"
-sex_check="${pileup_pipeline_home}/sex_check.py"
+clinvar_script="${pileup_pipeline_home}/internal_scripts/ClinVar_annotate.py"
+sex_check="${pileup_pipeline_home}/internal_scripts/sex_check.py"
 
 if (params.bam != ""){
     

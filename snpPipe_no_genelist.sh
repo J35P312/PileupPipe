@@ -7,5 +7,5 @@ do
     filename=$(basename "$file")
     extension="${filename##*.}"
     filename="${filename%.*}"
-    sbatch delly2.sh $file $2 
+    sbatch SubmitGeneList.sh $file $2 config.conf
 done

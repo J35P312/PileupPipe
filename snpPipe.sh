@@ -9,5 +9,5 @@ do
     extension="${filename##*.}"
     filename="${filename%.*}"
     echo "sbatch delly.sh $file $3 $2" 
-    sbatch delly.sh $file $3 $2
+    sbatch SubmitGeneList.sh $file $3 $2 config.conf
 done
