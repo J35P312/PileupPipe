@@ -1,13 +1,13 @@
 //path of the vep executable file
 
-tiddit="${pileup_pipeline_home}/TIDDIT/bin/TIDDIT"
-frequency_script="${pileup_pipeline_home}/internal_scripts/exac_annotation_sqlite.py"
-print_variants="${pileup_pipeline_home}/internal_scripts/print_variant.py"
-excel_script="${pileup_pipeline_home}/internal_scripts/CCCTG.py"
-CADD_script="${pileup_pipeline_home}/internal_scripts/annotate_vcf_cadd.py"
-vep_cache="${pileup_pipeline_home}/.vep"
-clinvar_script="${pileup_pipeline_home}/internal_scripts/ClinVar_annotate.py"
-sex_check="${pileup_pipeline_home}/internal_scripts/sex_check.py"
+tiddit="${params.pileup_pipeline_home}/TIDDIT/bin/TIDDIT"
+frequency_script="${params.pileup_pipeline_home}/internal_scripts/exac_annotation_sqlite.py"
+print_variants="${params.pileup_pipeline_home}/internal_scripts/print_variant.py"
+excel_script="${params.pileup_pipeline_home}/internal_scripts/CCCTG.py"
+CADD_script="${params.pileup_pipeline_home}/internal_scripts/annotate_vcf_cadd.py"
+vep_cache="${params.pileup_pipeline_home}/.vep"
+clinvar_script="${params.pileup_pipeline_home}/internal_scripts/ClinVar_annotate.py"
+sex_check="${params.pileup_pipeline_home}/internal_scripts/sex_check.py"
 
 if (params.bam != ""){
     
