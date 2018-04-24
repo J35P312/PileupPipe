@@ -28,7 +28,7 @@ def main(args):
 		intergenic = False
 		if "intergenic_" in line:
 			intergenic=True
-		if "|HIGH|" line or "|MODERATE" in line or "|LOW" in line:
+		if "|HIGH|" in line or "|MODERATE" in line or "|LOW" in line:
 			intergenic=False
 
                 if args.cadd and not intergenic:
