@@ -135,7 +135,11 @@ if (params.bam != ""){
         """
 
         vt decompose ${RAW_SNP_vcf} -o ${RAW_SNP_vcf.baseName}.decomposed.vcf
-        vt normalize ${RAW_SNP_vcf.baseName}.decomposed.vcf -r $TMPDIR/ref.fa -o ${RAW_SNP_vcf.baseName}.vcf
+        vt normalize ${RAW_SNP_vcf.baseName}.decomposed.vcf -r ${params.ref} -o ${RAW_SNP_vcf.baseName}.normalised.vcf
+	
+	rm ${RAW_SNP_vcf.baseName}.vcf
+	mv ${RAW_SNP_vcf.baseName}.normalised.vcf ${RAW_SNP_vcf.baseName}.vcf
+	
         if [ "" != ${params.dbSNP} ]
         then
             bgzip ${RAW_SNP_vcf.baseName}.vcf
