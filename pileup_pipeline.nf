@@ -1,7 +1,6 @@
 //path of the vep executable file
 
 tiddit="${params.pileup_pipeline_home}/TIDDIT/bin/TIDDIT"
-frequency_script="${params.pileup_pipeline_home}/internal_scripts/exac_annotation_sqlite.py"
 print_variants="${params.pileup_pipeline_home}/internal_scripts/print_variant.py"
 excel_script="${params.pileup_pipeline_home}/internal_scripts/CCCTG.py"
 CADD_script="${params.pileup_pipeline_home}/internal_scripts/annotate_vcf_cadd.py"
@@ -33,8 +32,6 @@ if (params.bam != ""){
 
     process mpileup{
         publishDir params.working_dir , mode: 'copy', overwrite: true
-        errorStrategy 'retry'
-        maxRetries 20
 
         input:
         file bam_file
@@ -66,35 +63,12 @@ if (params.bam != ""){
         """
     }
 
-    process GATK{
-        publishDir params.working_dir , mode: 'copy', overwrite: true
-
-        input:
-        file bam_file
-
-        output:
-        file ("${bam_file.baseName}.snps.GATK.vcf") into RAW_SNP_GATK_vcf
-        """
-        
-        java -Xmx8G -jar ${params.gatk} -T HaplotypeCaller -R ${params.ref} -I ${params.bam} --genotyping_mode DISCOVERY -stand_call_conf 10 -o ${bam_file.baseName}.snps.GATK.raw.vcf  -mmq 10
-
-        vt decompose ${bam_file.baseName}.snps.GATK.raw.vcf -o ${bam_file.baseName}.snps.GATK.decomposed.vcf
-        vt normalize ${bam_file.baseName}.snps.GATK.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.snps.GATK.vcf
-        """
-    }
-
-
-
-
     process vt_and_merge{
         publishDir params.working_dir , mode: 'copy', overwrite: true
-        errorStrategy 'retry'
-        maxRetries 20
 
         input:
-		file RAW_SNP_pileup_vcf
+	file RAW_SNP_pileup_vcf
         file RAW_SNP_freebayes_vcf
-        file RAW_SNP_GATK_vcf
         file bam_file
 
         output:
@@ -102,7 +76,7 @@ if (params.bam != ""){
 
 
         """
-        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:GATK ${RAW_SNP_GATK_vcf} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.merged.vcf -genotypeMergeOptions PRIORITIZE -priority freebayes,samtools,GATK
+        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.merged.vcf -genotypeMergeOptions PRIORITIZE -priority freebayes,samtools,GATK
 
         vt decompose ${bam_file.baseName}.merged.vcf -o ${bam_file.baseName}.merged.decomposed.vcf
         vt normalize ${bam_file.baseName}.merged.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.vcf
@@ -122,8 +96,6 @@ if (params.bam != ""){
 
     process vt_no_merge{
 	publishDir params.working_dir , mode: 'copy', overwrite: true
-        errorStrategy 'retry'
-        maxRetries 20
 
         input:
 	file RAW_SNP_vcf
@@ -140,21 +112,12 @@ if (params.bam != ""){
 	rm ${RAW_SNP_vcf.baseName}.vcf
 	mv ${RAW_SNP_vcf.baseName}.normalised.vcf ${RAW_SNP_vcf.baseName}.vcf
 	
-        if [ "" != ${params.dbSNP} ]
-        then
-            bgzip ${RAW_SNP_vcf.baseName}.vcf
-            bcftools index ${RAW_SNP_vcf.baseName}.vcf.gz
-            bcftools  annotate -a ${params.dbSNP} -c ID ${RAW_SNP_vcf.baseName}.vcf.gz > ${RAW_SNP_vcf.baseName}.vcf
-        fi
 	"""
     }
 }
 
 process annotate{
     publishDir params.working_dir , mode: 'copy', overwrite: true
-    errorStrategy 'retry'
-    maxRetries 20
-
 
     input:
     file SNP_vcf
@@ -164,7 +127,7 @@ process annotate{
     file ("${SNP_vcf.baseName}.vep.filt.xls") into annotated_filtered_SNP_xls
 
     """
-    ${params.VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf --force_overwrite --hgvs --symbol --fasta ${params.ref}  --sift b --polyphen b  --vcf --offline --per_gene --no_intergenic --cache --dir ${vep_cache} --symbol --check_existing
+    ${params.VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf ${params.vep_command} --dir ${params.vep_cache} --fasta ${params.ref}
     mv ${SNP_vcf.baseName}.vep.vcf ${SNP_vcf.baseName}.vep.filt.vcf
 
     if [ "" != ${params.genelist} ]
@@ -173,30 +136,6 @@ process annotate{
         mv tmp.vcf ${SNP_vcf.baseName}.vep.filt.vcf 
     fi
     
-    if [ "" != ${params.exac} ]
-    then
-        python ${frequency_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --db ${params.exac} --tag EXACAF > tmp.vcf
-        mv tmp.vcf ${SNP_vcf.baseName}.vep.filt.vcf 
-    fi
-
-    if [ "" != ${params.kg} ]
-    then
-        python ${frequency_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --db ${params.kg} --tag 1000GAF  > tmp.vcf
-        mv tmp.vcf ${SNP_vcf.baseName}.vep.filt.vcf 
-    fi
-
-    if [ "" != ${params.swefreq} ]
-    then
-        python ${frequency_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --db ${params.swefreq} --tag SWEAF   > tmp.vcf
-        mv tmp.vcf ${SNP_vcf.baseName}.vep.filt.vcf 
-    fi
-
-    if [ "" != ${params.gnomad} ]
-    then
-        python ${frequency_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --db ${params.gnomad} --tag GNOMADAF   > tmp.vcf
-        mv tmp.vcf ${SNP_vcf.baseName}.vep.filt.vcf 
-    fi
-
     if [ "" != ${params.cadd_indels} ]
     then
         python ${CADD_script} --vcf ${SNP_vcf.baseName}.vep.filt.vcf --cadd ${params.cadd_indels} > tmp.vcf

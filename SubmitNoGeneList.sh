@@ -10,11 +10,10 @@ module load bioinfo-tools
 module load samtools
 module load bcftools
 module load vt
-module load vep/87
+module load vep
 module load tabix
-module load GATK/3.8-0
 module load freebayes
-
+module  load gatk
 #argument1: a bam file
 #argument2: an output folder
 #argument3: the config file
@@ -28,7 +27,7 @@ echo "$sample"
 mkdir $TMPDIR/$sample
 
 cp $1 $TMPDIR/$filename
-cp $1.bai $TMPDIR/$filename.bai
 
+samtools index $TMPDIR/$filename
 ./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -w $TMPDIR -c $3
 cp -rf $TMPDIR/$sample/ $2/

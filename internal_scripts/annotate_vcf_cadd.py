@@ -26,10 +26,8 @@ def main(args):
                 alt=content[4]
                 #cadd annotation
 		intergenic = False
-		if "intergenic_" in line:
+		if "|HIGH|" in line or "|MODERATE" in line:
 			intergenic=True
-		if "|HIGH|" in line or "|MODERATE" in line or "|LOW" in line:
-			intergenic=False
 
                 if args.cadd and not intergenic:
                     command=["tabix {} {}:{}-{}".format(args.cadd,chromosome,position,end)]
