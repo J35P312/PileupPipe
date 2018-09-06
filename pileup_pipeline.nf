@@ -76,17 +76,10 @@ if (params.bam != ""){
 
 
         """
-        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.merged.vcf -genotypeMergeOptions PRIORITIZE -priority freebayes,samtools,GATK
+        java -jar ${params.gatk} -T CombineVariants -R ${params.ref} --variant:samtools ${RAW_SNP_pileup_vcf.baseName}.vcf --variant:freebayes ${RAW_SNP_freebayes_vcf.baseName}.vcf -o ${bam_file.baseName}.merged.vcf -genotypeMergeOptions PRIORITIZE -priority freebayes,samtools
 
         vt decompose ${bam_file.baseName}.merged.vcf -o ${bam_file.baseName}.merged.decomposed.vcf
         vt normalize ${bam_file.baseName}.merged.decomposed.vcf -r ${params.ref} -o ${bam_file.baseName}.vcf
-
-        if [ "" != ${params.dbSNP} ]
-        then
-            bgzip ${bam_file.baseName}.vcf
-            bcftools index ${bam_file.baseName}.vcf.gz
-            bcftools  annotate -a ${params.dbSNP} -c ID ${bam_file.baseName}.vcf.gz > ${bam_file.baseName}.vcf
-        fi
 	"""
     }
 
@@ -127,7 +120,7 @@ process annotate{
     file ("${SNP_vcf.baseName}.vep.filt.xls") into annotated_filtered_SNP_xls
 
     """
-    ${params.VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf ${params.vep_command} --dir ${params.vep_cache} --fasta ${params.ref}
+    ${params.VEP_exec_file} -i ${SNP_vcf} -o ${SNP_vcf.baseName}.vep.vcf ${params.vep_command} --dir ${vep_cache} --fasta ${params.ref}
     mv ${SNP_vcf.baseName}.vep.vcf ${SNP_vcf.baseName}.vep.filt.vcf
 
     if [ "" != ${params.genelist} ]

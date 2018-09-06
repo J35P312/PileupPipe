@@ -9,11 +9,12 @@
 module load bioinfo-tools
 module load samtools
 module load bcftools
+module load Nextflow
 module load vt
 module load vep
 module load tabix
 module load freebayes
-module load gatk
+module load GATK
 
 #argument1: a vcf file to be annotated
 #argument2: an output folder

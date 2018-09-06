@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -A b2014152
+#SBATCH -A sens2017130
 #SBATCH -p core
 #SBATCH -n 4
 #SBATCH -t 96:00:00
@@ -13,7 +13,9 @@ module load vt
 module load vep
 module load tabix
 module load freebayes
-module  load gatk
+module load Nextflow
+module load GATK
+
 #argument1: a bam file
 #argument2: an output folder
 #argument3: the config file
@@ -29,5 +31,7 @@ mkdir $TMPDIR/$sample
 cp $1 $TMPDIR/$filename
 
 samtools index $TMPDIR/$filename
-./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -w $TMPDIR -c $3
+#nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -w $TMPDIR -c $3
+nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -c $3
+
 cp -rf $TMPDIR/$sample/ $2/
