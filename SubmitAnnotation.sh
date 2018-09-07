@@ -10,6 +10,7 @@ module load bioinfo-tools
 module load Nextflow
 module load samtools
 module load bcftools
+module load Nextflow
 module load vt
 module load vep
 module load tabix

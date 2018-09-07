@@ -31,5 +31,6 @@ mkdir $TMPDIR/$sample
 cp $1 $TMPDIR/$filename
 
 samtools index $TMPDIR/$filename
-nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -w $TMPDIR -c $4
+#./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -w $TMPDIR -c $4
+./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -c $4
 cp -rf $TMPDIR/$sample/ $2/
