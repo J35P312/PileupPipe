@@ -25,7 +25,8 @@ def EFF(effects,order):
         gnomAD_AF=effects[order["gnomAD_AF"]]
         max_AF=effects[order["MAX_AF"]]
         kg_AF=effects[order["AF"]]
-        snp_dictionary[gene][impact]={"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
+	clin_sig=effects[order["CLIN_SIG"]]
+        snp_dictionary[gene][impact]={"CLIN_SIG":clin_sig,"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
 
         
         #if sequence_feature is not the only entry of a gene, 
@@ -50,9 +51,7 @@ def compute_rankscore(variant_dictionary):
         rank_score += 1
 
     #increase the score of known pathogenic or likely pathogenic variants, decrease the score of benign variants
-    if variant_dictionary["clinvar"] == "Pathogenic":
-        rank_score += 5
-    elif variant_dictionary["clinvar"] == "Likely pathogenic":
+    if "pathogenic" in variant_dictionary["clinvar"]:
         rank_score += 5
     elif variant_dictionary["clinvar"] == "benign":    
         rank_score += -4
@@ -123,13 +122,7 @@ for line in open(args.vcf):
         txt=content[7].split(";BLACKLIST=")
         if len(txt) == 2:
             txt=txt[-1]
-            blacklist=int(txt.split(";")[0])
-
-        clinvar=""
-        txt=content[7].split(";CLINVAR=")
-        if len(txt) == 2:
-            txt=txt[-1]
-            clinvar=txt.split(";")[0]        
+            blacklist=int(txt.split(";")[0])    
 
         #have a look in the snpeff field
         for gene in snp_dictionary:
@@ -161,20 +154,21 @@ for line in open(args.vcf):
                 high=snp_dictionary[gene][variant]["high"]
                 poly=snp_dictionary[gene][variant]["poly"]
                 id_=snp_dictionary[gene][variant]["rsid"]
+                clin_sig=snp_dictionary[gene][variant]["CLIN_SIG"]
 
                 sift=snp_dictionary[gene][variant]["sift"]
 
                 if float(max_af) > args.frequency:
                      continue
-                rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clinvar,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant})
-                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clinvar,rankscore,blacklist,poly,sift,cadd,popfreq,gnomad,max_af])
+                rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clin_sig,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant})
+                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clin_sig,rankscore,blacklist,poly,sift,popfreq,gnomad,max_af])
 
 filename=args.vcf.replace(".vcf",".xls")
 
 wb =  xlwt.Workbook()
 ws0 = wb.add_sheet("variants",cell_overwrite_ok=True)
 i=0;
-header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","blackListed","PolyPhen","SIFT","CADD","thousand_genome","gnomad","max_af"]
+header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","blackListed","PolyPhen","SIFT","thousand_genome","gnomad","max_af"]
 j=0
 for item in header:
     ws0.write(i, j, item)
