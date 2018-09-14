@@ -19,6 +19,11 @@ def EFF(effects,order):
         high=0
         if "HIGH" == effects[order["IMPACT"]]:
             high=1
+        cadd=""
+        if "cadd_CADD" in order:
+            cadd=effects[order["cadd_CADD"]].split("&")[0]
+            if cadd != "":
+                cadd = float(cadd)
 
         if not gene in snp_dictionary:
             snp_dictionary[gene]={}
@@ -26,7 +31,7 @@ def EFF(effects,order):
         max_AF=effects[order["MAX_AF"]]
         kg_AF=effects[order["AF"]]
 	clin_sig=effects[order["CLIN_SIG"]]
-        snp_dictionary[gene][impact]={"CLIN_SIG":clin_sig,"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
+        snp_dictionary[gene][impact]={"CADD":cadd,"CLIN_SIG":clin_sig,"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
 
         
         #if sequence_feature is not the only entry of a gene, 
@@ -35,11 +40,14 @@ def EFF(effects,order):
 def compute_rankscore(variant_dictionary):
     rank_score=0
     #add cadd score
-    if variant_dictionary["cadd"] > 30:
-        rank_score+=2
-    elif variant_dictionary["cadd"] > 20:
-        rank_score +=1
-
+    if variant_dictionary["cadd"] != "":
+        if float(variant_dictionary["cadd"]) > 30:
+            rank_score+=2
+        elif float(variant_dictionary["cadd"]) > 20:
+            rank_score +=1
+        elif float(variant_dictionary["cadd"]) < 10:
+            rank_score -2
+  
     #add points if the impact of the variant is high
     if variant_dictionary["high"]:
         rank_score +=2
@@ -59,7 +67,7 @@ def compute_rankscore(variant_dictionary):
     #variants not located in in a blacklisted region gets a higher score 
     if not variant_dictionary["black_listed"]:
         rank_score +=1
-
+s
     if variant_dictionary["impact"] == "LOW" or "MODIFIER" == variant_dictionary["impact"]:
         rank_score+= -5
 
@@ -105,18 +113,6 @@ for line in open(args.vcf):
         snp_dictionary=EFF(line.strip().split("\t")[7].split("CSQ=")[-1].split(";")[0].split(","),order )
         ref=content[3]
         alt=content[4]
-        cadd=""
-        txt=content[7].split(";CADD=")
-        tolerated_cadd=0
-        if len(txt) == 2:
-            txt=txt[-1]
-            cadd=txt.split(";")[0]
-            try:
-                if float(cadd) < 10:
-                   tolerated_cadd=1
-                   cadd=float(cadd)
-            except:
-               cadd=""
 
         blacklist=0
         txt=content[7].split(";BLACKLIST=")
@@ -135,11 +131,10 @@ for line in open(args.vcf):
                 elif "MODERATE" in snp_dictionary[gene] and ( variant == "LOW" or variant == "MODIFIER" ):
                     continue
 
-                tolerated=0+tolerated_cadd
-
                 gnomad=snp_dictionary[gene][variant]["gnomAD_AF"]
                 if gnomad == "":
                     gnomad="0.0"
+	
 
                 popfreq=snp_dictionary[gene][variant]["kg_AF"]
                 if popfreq == "":
@@ -148,6 +143,9 @@ for line in open(args.vcf):
                 max_af=snp_dictionary[gene][variant]["max_af"]
                 if max_af == "":
                     max_af="0.0"
+                cadd=""
+                if "CADD" in snp_dictionary[gene][variant]:
+                    cadd=snp_dictionary[gene][variant]["CADD"]
 
                 feature=snp_dictionary[gene][variant]["feature"]
                 cdna=snp_dictionary[gene][variant]["cdna"]
@@ -160,15 +158,15 @@ for line in open(args.vcf):
 
                 if float(max_af) > args.frequency:
                      continue
-                rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clin_sig,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant})
-                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clin_sig,rankscore,blacklist,poly,sift,popfreq,gnomad,max_af])
+                rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clin_sig,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant,"cadd":cadd})
+                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clin_sig,rankscore,cadd,blacklist,poly,sift,popfreq,gnomad,max_af])
 
 filename=args.vcf.replace(".vcf",".xls")
 
 wb =  xlwt.Workbook()
 ws0 = wb.add_sheet("variants",cell_overwrite_ok=True)
 i=0;
-header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","blackListed","PolyPhen","SIFT","thousand_genome","gnomad","max_af"]
+header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","CADD","blackListed","PolyPhen","SIFT","thousand_genome","gnomad","max_af"]
 j=0
 for item in header:
     ws0.write(i, j, item)
