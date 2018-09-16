@@ -34,4 +34,4 @@ cp $1 $TMPDIR/$filename
 samtools index $TMPDIR/$filename
 #nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -w $TMPDIR -c $3
 nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample -c $3
-p -rf $TMPDIR/$sample/ $2/
+cp -rf $TMPDIR/$sample/ $2/
