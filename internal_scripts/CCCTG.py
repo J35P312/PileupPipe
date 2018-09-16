@@ -31,7 +31,10 @@ def EFF(effects,order):
         max_AF=effects[order["MAX_AF"]]
         kg_AF=effects[order["AF"]]
 	clin_sig=effects[order["CLIN_SIG"]]
-        snp_dictionary[gene][impact]={"CADD":cadd,"CLIN_SIG":clin_sig,"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
+	gene_pheno=effects[order["GENE_PHENO"]]
+	#if gene_pheno != "":
+	#	print gene_pheno
+        snp_dictionary[gene][impact]={"gene_pheno":gene_pheno,"CADD":cadd,"CLIN_SIG":clin_sig,"feature":feature,"cdna":cdna,"sift":sift,"poly":phen,"high":high,"gnomAD_AF":gnomAD_AF,"max_af":max_AF,"kg_AF":kg_AF,"consequence":effects[order["Consequence"]],"rsid":effects[order["Existing_variation"]]}
 
         
         #if sequence_feature is not the only entry of a gene, 
@@ -42,15 +45,18 @@ def compute_rankscore(variant_dictionary):
     #add cadd score
     if variant_dictionary["cadd"] != "":
         if float(variant_dictionary["cadd"]) > 30:
-            rank_score+=2
+            rank_score+=4
         elif float(variant_dictionary["cadd"]) > 20:
-            rank_score +=1
+            rank_score +=2
         elif float(variant_dictionary["cadd"]) < 10:
             rank_score -2
   
     #add points if the impact of the variant is high
     if variant_dictionary["high"]:
         rank_score +=2
+
+    if variant_dictionary["gene_pheno"] == "1":
+        rank_score +=1
 
     #add points for compound and homozygous variants
     if variant_dictionary["zygosity"] == "hom":
@@ -60,14 +66,14 @@ def compute_rankscore(variant_dictionary):
 
     #increase the score of known pathogenic or likely pathogenic variants, decrease the score of benign variants
     if "pathogenic" in variant_dictionary["clinvar"]:
-        rank_score += 5
+        rank_score += 10
     elif variant_dictionary["clinvar"] == "benign":    
         rank_score += -4
 
     #variants not located in in a blacklisted region gets a higher score 
     if not variant_dictionary["black_listed"]:
         rank_score +=1
-s
+
     if variant_dictionary["impact"] == "LOW" or "MODIFIER" == variant_dictionary["impact"]:
         rank_score+= -5
 
@@ -153,20 +159,21 @@ for line in open(args.vcf):
                 poly=snp_dictionary[gene][variant]["poly"]
                 id_=snp_dictionary[gene][variant]["rsid"]
                 clin_sig=snp_dictionary[gene][variant]["CLIN_SIG"]
-
+		gene_pheno=snp_dictionary[gene][variant]["gene_pheno"]
                 sift=snp_dictionary[gene][variant]["sift"]
 
                 if float(max_af) > args.frequency:
                      continue
-                rankscore=compute_rankscore({"zygosity":zygosity,"clinvar":clin_sig,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant,"cadd":cadd})
-                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clin_sig,rankscore,cadd,blacklist,poly,sift,popfreq,gnomad,max_af])
+		#print snp_dictionary[gene][variant]["gene_pheno"]
+                rankscore=compute_rankscore({"gene_pheno":gene_pheno,"zygosity":zygosity,"clinvar":clin_sig,"poly":poly,"sift":sift,"cadd":cadd,"1kgaf":popfreq,"gnomad":gnomad,"max_af":max_af,"black_listed":blacklist,"high":high,"impact":variant,"cadd":cadd})
+                variant_list.append([chrom,pos,id_,ref, alt,feature,cdna,snp_dictionary[gene][variant]["consequence"],variant,gene,zygosity,clin_sig,rankscore,cadd,blacklist,poly,sift,popfreq,gnomad,max_af,gene_pheno])
 
 filename=args.vcf.replace(".vcf",".xls")
 
 wb =  xlwt.Workbook()
 ws0 = wb.add_sheet("variants",cell_overwrite_ok=True)
 i=0;
-header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","CADD","blackListed","PolyPhen","SIFT","thousand_genome","gnomad","max_af"]
+header=["Chromosome","Position","ID","Ref","Alt","AA-change","CDNA","Consequence","severity","Gene","zygosity","ClinVar","RankScore","CADD","blackListed","PolyPhen","SIFT","thousand_genome","gnomad","max_af","gene_pheno"]
 j=0
 for item in header:
     ws0.write(i, j, item)
