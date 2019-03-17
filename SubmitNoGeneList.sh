@@ -9,13 +9,8 @@
 module load bioinfo-tools
 module load Nextflow
 module load samtools
-module load bcftools
-module load vt
 module load vep
-module load tabix
-module load freebayes
 module load Nextflow
-module load GATK
 
 #argument1: a bam file
 #argument2: an output folder

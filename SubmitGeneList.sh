@@ -9,11 +9,6 @@
 module load bioinfo-tools
 module load Nextflow
 module load samtools
-module load bcftools
-module load vt
-module load tabix
-module load freebayes
-module load GATK
 
 #argument1: a bam file
 #argument2: an output folder
@@ -32,5 +27,5 @@ cp $1 $TMPDIR/$filename
 
 samtools index $TMPDIR/$filename
 #./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -w $TMPDIR -c $4
-./nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -c $4
+nextflow pileup_pipeline.nf --bam $TMPDIR/$filename --working_dir $TMPDIR/$sample --genelist $3 -c $4
 cp -rf $TMPDIR/$sample/ $2/

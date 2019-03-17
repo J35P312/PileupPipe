@@ -1,6 +1,6 @@
 # PileupPipe
 
-Run SNP variant calling using bcftools pileup and freebayes. The pipeline performs annotation using vep and produces a vcf and excel file.
+Run SNP variant calling using gatk4 haplotypecaller. The pipeline performs annotation using vep and produces a vcf and excel file.
 
 # Run Locally
 Analyse a single sample, using a gene list:
@@ -10,11 +10,6 @@ Analyse a single sample, using a gene list:
 Analyse a single sample, with no gene list:
 
     nextflow pileup_pipeline.nf --bam <input_bam> --working_dir <output_folder> -w $TMPDIR -c <config_file_from_setup>
-
-annotate a vcf file
-
-    nextflow pileup_pipeline.nf --vcf <input_vcf> --working_dir <output_folder> -w $TMPDIR -c <config_file_from_setup>
-
 
 # Run on slurm
 
@@ -30,7 +25,7 @@ Analyse a single sample, with no gene list:
 
 Analyse a folder containing bam files using a gene list:
 
-    ./snpPipe.sh <input_folder_with_bam> <output_folder> <genelist>
+    ./snpPipe.sh <input_folder_with_bam> <output_folder> <genelist> <config_file_from_setup>
 
 # Install
 
@@ -42,19 +37,23 @@ run the setup script
 
     python setup.py > config.conf
 
+Download the singularity collection (note, the singularity collection needs to be placed in the pipeline folder)
+
+singularity pull --name PileUp.simg shub://J35P312/PileupPipe
+
+or build it yourself:
+
+singularity build PileUp.simg Singularity
 
 open the config file using a text editor and change the path variables:
     
     nano config.conf
 
-The Picard tools (line 48) and reference (line 49) paths are required:
-
-You need to install TIDDIT and put the TIDDIT directory inside the PileupPipe directory.
+The  reference (line 49) path is required:
 
 Additionally, you need to put a .vep folder containing the vep database insisde the PileupPipe folder.
 
-
-If you use the slurm wrappers, you need to edit the slurm account in the files, SubmitAnnotation.sh, SubmitGeneList.sh, and SubmitNoGeneList.sh
+If you use the slurm wrappers, you need to edit the slurm account in the files,  SubmitGeneList.sh, and SubmitNoGeneList.sh
 
 # Gene list
 
